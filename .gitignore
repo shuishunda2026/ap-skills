@@ -1,36 +1,7 @@
-# === 临时文件 ===
-.dub_work/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
-tmp/
-
-# === Debug 脚本（开发临时） ===
-_debug_*.py
-
-# === 测试产物（不 track,太大） ===
-test_output/
-output/
-*.mp4
-*.mp3
-*.wav
-*.srt
-*.jpg
-*.png
-
-# === 杂物（您的工作目录里的其他项目） ===
-nul
-price.png
-Quant/
-ai-assistant-guide/
-ai-assistant-speech/
-childrens-day/
-qiting-ai-presentation/
-云获客/
-如何正确使用AI助手.md
-老胡短视频内容营销陪跑营（第二期）开营说明.pdf
