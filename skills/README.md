@@ -1,74 +1,67 @@
-# aping-skills：5 个本地视频剪辑工具
+# PIproject 素材库
 
-> 仿王建硕 `claude-skills` 的命名和结构，用 **m3** 调度 + 本机已有工具实现。
-> 命名约定：`aping-*` 前缀 + 动词（transcribing / regrouping / burning / dubbing / segmenting）。
+> 视频剪辑工作流的测试素材和 Skill 开发项目。
+>
+> **安装使用说明** 在 pi 加载后的 `~/.pi/agent/skills/ap-skills/README.md`（本仓库 README 不重复）。
 
-## 🎯 设计原则
+## 📁 目录结构
 
-1. **判断交给 m3，执行交给脚本**——话题边界、AI 润色由 m3 做；切割、烧字幕、拼接由 Python 做
-2. **一次 ffmpeg 编码**（aping-burning）——不级联重编码，画质零损失
-3. **重编码切割**（aping-segmenting）——避免流复制导致的字幕/声音不同步
-4. **共享库 aping-common**——统一 ffmpeg 路径、Windows 字体、SRT 解析
-
-## 📦 5 个 skill 速查
-
-| Skill | 用途 | 入口 |
-|------|------|------|
-| `aping-transcribing-audio` | 视频/音频 → SRT | `python aping-transcribing-audio/scripts/transcribe.py video.mp4 --language zh` |
-| `aping-regrouping-srt` | 标点重切 + AI 润色 | `python aping-regrouping-srt/scripts/regroup.py sub.srt --mode polish` |
-| `aping-burning-subtitles` | 烧字幕到视频 | `python aping-burning-subtitles/scripts/burn.py video.mp4 --srt sub.srt --out final.mp4` |
-| `aping-dubbing-video` | 视频配音 | `python aping-dubbing-video/scripts/dub.py video.mp4 --srt sub.srt --voice zh-CN-XiaoxiaoNeural` |
-| `aping-segmenting-video` | 长视频 → 多条短片 | `python aping-segmenting-video/scripts/segment.py video.mp4 --segments segments.json --out output/` |
-
-## 🛠 完整流水线
-
-```bash
-# 1. 转录
-python aping-transcribing-audio/scripts/transcribe.py input.mp4 --language zh
-
-# 2. 重切 + AI 润色
-python aping-regrouping-srt/scripts/regroup.py input.srt --mode polish
-
-# 3. m3 读 SRT 决定 segments.json（手动对话）
-#    "请把这段 SRT 切成 4 条独立短视频，给 JSON"
-
-# 4. 切割
-python aping-segmenting-video/scripts/segment.py input.mp4 \
-    --segments segments.json \
-    --srt input.srt \
-    --out output/
-
-# 5. 给每个 clip 烧字幕
-for f in output/clip_*.mp4; do
-    srt="${f%.mp4}.srt"
-    python aping-burning-subtitles/scripts/burn.py "$f" \
-        --srt "$srt" --out "${f%.mp4}.burned.mp4"
-done
-
-# 6. (可选) 配音
-python aping-dubbing-video/scripts/dub.py input.mp4 \
-    --srt input.zh.srt \
-    --voice zh-CN-XiaoxiaoNeural \
-    --out input.dub.mp4
+```
+D:\PIproject\
+├── .gitignore              # 忽略 tmp/output/test.mp4 等
+├── test.mp4                # 测试视频（手机竖拍，26.77s 720×1280）
+├── skills/                 # 5 个 aping skill + 共享库
+│   ├── README.md
+│   ├── NOTES.md
+│   ├── sync-to-pi.bat
+│   ├── aping-transcribing-audio/
+│   ├── aping-regrouping-srt/
+│   ├── aping-burning-subtitles/
+│   ├── aping-dubbing-video/
+│   ├── aping-segmenting-video/
+│   └── aping-common/
+├── test_output/            # 测试产物（gitignored）
+│   ├── test.funasr.srt
+│   ├── test.funasr.polished.srt
+│   ├── clips_funasr/       # 切片+烧字幕成片
+│   └── test.dubbed.mp4
+├── .dub_work/              # 配音中间产物（gitignored）
+├── Quant/                  # 其他项目
+├── ai-assistant-guide/
+├── ai-assistant-speech/
+├── childrens-day/
+├── qiting-ai-presentation/
+├── 云获客/
+├── 如何正确使用AI助手.md
+└── 老胡短视频内容营销陪跑营（第二期）开营说明.pdf
 ```
 
-## 📚 设计参考
+## 🎬 测试视频
 
-- 王建硕 [jianshuo/claude-skills](https://github.com/jianshuo/claude-skills) — 原始 skill 设计和命名风格
-- [whisperX](https://github.com/m-bain/whisperX) — 词级时间戳 + 说话人分离
-- [MoviePy](https://github.com/Zulko/moviepy) — Python 视频编辑
-- [edge-tts](https://github.com/rany2/edge-tts) — 微软神经 TTS
-- [VoxCPM](https://github.com/openbmb) — OpenBMB 本地 TTS
-- [mmx-cli](https://github.com/MiniMax/mmx-cli) — MiniMax 多模态 CLI
+**`test.mp4`**：26.77s 720×1280 HEVC+AAC，2.2MB，口播中文。
 
-## 🐛 已知问题
+测试过的内容：
+- ✅ 完整流水线（转录 → 重切 → 切片 → 烧字幕 → 配音）
+- ✅ ASR 引擎：whisperx small vs FunASR paraformer-zh（FunASR 完胜）
+- ✅ TTS 引擎：edge-tts / mmx / VoxCPM
+- ✅ AI 润色：mmx M3 修正错别字
 
-- bash 控制台中文乱码（GBK 编码问题，**不影响文件**）
-- `aping-dubbing-video` 完整跑没测过（您机器上 VoxCPM 已有，但 mmx 和 edge-tts 联调没测）
-- `aping-transcribing-audio` 没在真实长视频上测过（只 import 测试过）
+## 🔧 日常开发流
 
-## ✅ 已验证
+```bash
+# 1. 改 skills/ 下的代码
+# 2. 跑 sync-to-pi.bat 同步到 pi agent
+cmd.exe //c "D:\\PIproject\\skills\\sync-to-pi.bat"
 
-- `aping-common` 全部工具函数
-- `aping-burning-subtitles` 真烧字幕（蓝底 + 微软雅黑 + 3 条字幕）
-- `aping-segmenting-video` 真切割（5 秒视频 + 抽帧 + SRT 切片）
+# 3. 提交到 GitHub
+cd D:/PIproject
+git add skills/
+git commit -m "feat: 你的改动"
+git push
+```
+
+## 🔗 相关链接
+
+- GitHub: https://github.com/shuishunda2026/ap-skills
+- pi skill 目录: `~/.pi/agent/skills/ap-skills/`
+- 王建硕原版: https://github.com/jianshuo/claude-skills
