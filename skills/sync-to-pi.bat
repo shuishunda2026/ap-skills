@@ -1,6 +1,7 @@
 @echo off
-REM Sync aping skills from D:\PIproject\skills\ to pi agent dir under my-skills\.
+REM Sync aping skills from D:\PIproject\skills\ to pi agent dir under ap-skills\.
 REM Run this after editing any script.
+REM Note: README.md is maintained manually in pi dir (not synced from D: drive).
 
 set SRC=D:\PIproject\skills
 set DST=C:\Users\shuis\.pi\agent\skills\ap-skills
@@ -13,13 +14,12 @@ for %%S in (aping-transcribing-audio aping-regrouping-srt aping-burning-subtitle
     )
 )
 
-REM Also sync top-level docs to pi root
-for %%F in (README.md NOTES.md) do (
-    if exist "%SRC%\%%F" (
-        echo [sync] %%F
-        copy /Y "%SRC%\%%F" "%DST%\..\%%F" >nul
-    )
+REM Sync NOTES.md (development notes, kept in both D: and pi)
+if exist "%SRC%\NOTES.md" (
+    echo [sync] NOTES.md
+    copy /Y "%SRC%\NOTES.md" "%DST%\NOTES.md" >nul
 )
 
 echo.
 echo [done] pi will pick up changes on next session.
+echo [hint] README.md in pi dir is maintained manually, not synced.
